@@ -24,6 +24,9 @@
 @property (weak, nonatomic) Osc *osc;
 
 @property (assign, nonatomic) BOOL enableAccelerometer; // enable receiving accel events?
+@property (assign, nonatomic) BOOL enableRotation;	// enable receiving device rotation events?
+
+@property (assign, nonatomic) UIInterfaceOrientation currentOrientation; // for accel axes
 
 // close the current scene and open a new one, requires full path to current patch
 - (BOOL)openScene:(NSString *)path withType:(SceneType)type forParent:(UIView *)parent;
@@ -37,16 +40,13 @@
 // update view pointers in case the patch view controller has changed  
 - (void)updateParent:(UIView *)parent;
 
-// set a new orientation, sends rotation event
-- (void)rotated:(UIInterfaceOrientation)fromOrientation to:(UIInterfaceOrientation)toOrientation;
-
 #pragma mark Send Events
 
 // rj touch event
 - (void)sendTouch:(NSString *)eventType forId:(int)id atX:(float)x andY:(float)y;
 
 // pdparty rotate event
-- (void)sendRotate:(float)degrees newOrientation:(NSString *)orientation;
+- (void)sendRotate:(NSString *)orientation withDegreesZ:(float)degreesZ andDegreesXY:(float)degreesXY;
 
 // pd key event
 - (void)sendKey:(int)key;

@@ -40,6 +40,8 @@
 #define PARTY_ORIENT_PORTRAIT_UPSIDEDOWN	@"upsidedown"
 #define PARTY_ORIENT_LANDSCAPE_LEFT			@"landleft"
 #define PARTY_ORIENT_LANDSCAPE_RIGHT		@"landright"
+#define PARTY_ORIENT_FACE_UP				@"faceup"
+#define PARTY_ORIENT_FACE_DOWN				@"facedown"
 
 // sample rates
 #define PARTY_SAMPLERATE	44100
@@ -108,7 +110,7 @@
 + (void)sendAccel:(float)x y:(float)y z:(float)z;
 
 // pdparty rotate event
-+ (void)sendRotate:(float)degrees newOrientation:(NSString *)orientation;
++ (void)sendRotate:(NSString *)orientation withDegreesZ:(float)degreesZ andDegreesXY:(float)degreesXY;
 
 // pd key event
 + (void)sendKey:(int)key;

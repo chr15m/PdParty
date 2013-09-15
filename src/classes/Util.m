@@ -49,16 +49,22 @@
 
 #pragma mark Conversion
 
-+ (int)orientationInDegrees:(UIInterfaceOrientation)orientation {
++ (int)orientationInDegrees:(UIDeviceOrientation)orientation {
 	switch(orientation) {
-		case UIInterfaceOrientationPortrait:
+		case UIDeviceOrientationPortrait:
 			return 0;
-		case UIInterfaceOrientationPortraitUpsideDown:
+		case UIDeviceOrientationPortraitUpsideDown:
 			return 180;
-		case UIInterfaceOrientationLandscapeLeft:
+		case UIDeviceOrientationLandscapeLeft:
 			return 90;
-		case UIInterfaceOrientationLandscapeRight:
+		case UIDeviceOrientationLandscapeRight:
 			return -90;
+		case UIDeviceOrientationFaceUp:
+			return 0;
+		case UIDeviceOrientationFaceDown:
+			return 180;
+		default: // unknown
+			return 0;
 	}
 }
 

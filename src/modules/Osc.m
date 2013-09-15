@@ -94,12 +94,13 @@
 	[connection sendPacket:message toHost:self.sendHost port:self.sendPort];
 }
 
-- (void)sendRotate:(float)degrees newOrientation:(NSString*)orientation {
+- (void)sendRotate:(NSString *)orientation withDegreesZ:(float)degreesZ andDegreesXY:(float)degreesXY {
 	if(!self.listening || !self.rotationSendingEnabled) return;
 	OSCMutableMessage *message = [[OSCMutableMessage alloc] init];
     message.address = OSC_ROTATE_ADDR;
-	[message addFloat:degrees];
 	[message addString:orientation];
+	[message addFloat:degreesZ];
+	[message addFloat:degreesXY];
 	[connection sendPacket:message toHost:self.sendHost port:self.sendPort];
 }
 

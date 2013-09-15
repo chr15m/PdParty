@@ -19,11 +19,16 @@
 
 @interface SceneManager () {
 	CMMotionManager *motionManager; // for accel data
-	UIInterfaceOrientation currentOrientation; // accel orientation based on this
+	UIDeviceOrientation currentDeviceOrientation; // rotation degrees based on this
 	BOOL hasReshaped; // has the gui been reshaped?
 }
+
 @property (strong, readwrite, nonatomic) NSString* currentPath;
 @property (assign, readwrite, getter=isRecording, nonatomic) BOOL recording;
+
+// called by the device notificaiton center
+- (void)deviceOrientationChanged:(NSNotification *)notification;
+
 @end
 
 @implementation SceneManager
@@ -39,11 +44,12 @@
 		
 		// current UI orientation for accel
 		if([Util isDeviceATablet]) { // iPad can started rotated
-			currentOrientation = [[UIApplication sharedApplication] statusBarOrientation];
+			self.currentOrientation = [[UIApplication sharedApplication] statusBarOrientation];
 		}
 		else { // do not start rotated on iPhone
-			currentOrientation = UIInterfaceOrientationPortrait;
+			self.currentOrientation = UIInterfaceOrientationPortrait;
 		}
+		currentDeviceOrientation = [[UIDevice currentDevice] orientation];
 		
 		// set osc and pure data pointer
 		AppDelegate *app = (AppDelegate *)[[UIApplication sharedApplication] delegate];
@@ -90,6 +96,7 @@
 	self.pureData.audioEnabled = YES;
 	self.pureData.sampleRate = self.scene.sampleRate;
 	self.enableAccelerometer = self.scene.requiresAccel;
+	self.enableRotation = self.scene.requiresRotation;
 	self.pureData.playing = YES;
 	[self.scene open:path];
 	
@@ -143,31 +150,6 @@
 	self.scene.parentView = parent;
 }
 
-- (void)rotated:(UIInterfaceOrientation)fromOrientation to:(UIInterfaceOrientation)toOrientation {
-	
-	int rotate = [Util orientationInDegrees:fromOrientation] - [Util orientationInDegrees:toOrientation];
-	
-	NSString *orient;
-	switch(toOrientation) {
-		case UIInterfaceOrientationPortrait:
-			orient = PARTY_ORIENT_PORTRAIT;
-			break;
-		case UIInterfaceOrientationPortraitUpsideDown:
-			orient = PARTY_ORIENT_PORTRAIT_UPSIDEDOWN;
-			break;
-		case UIInterfaceOrientationLandscapeLeft:
-			orient = PARTY_ORIENT_LANDSCAPE_LEFT;
-			break;
-		case UIInterfaceOrientationLandscapeRight:
-			orient = PARTY_ORIENT_LANDSCAPE_RIGHT;
-			break;
-	}
-
-	//DDLogVerbose(@"rotate: %d %@", rotate, orient);
-	[self sendRotate:rotate newOrientation:orient];
-	currentOrientation = toOrientation;
-}
-
 #pragma mark Send Events
 
 - (void)sendTouch:(NSString *)eventType forId:(int)id atX:(float)x andY:(float)y {
@@ -179,12 +161,12 @@
 	}
 }
 
-- (void)sendRotate:(float)degrees newOrientation:(NSString *)orientation {
+- (void)sendRotate:(NSString *)orientation withDegreesZ:(float)degreesZ andDegreesXY:(float)degreesXY {
 	if(self.scene.requiresRotation) {
-		[PureData sendRotate:degrees newOrientation:orientation];
+		[PureData sendRotate:orientation withDegreesZ:degreesZ andDegreesXY:degreesXY];
 	}
 	if(self.osc.isListening) {
-		[self.osc sendRotate:degrees newOrientation:orientation];
+		[self.osc sendRotate:orientation withDegreesZ:degreesZ andDegreesXY:degreesXY];
 	}
 }
 
@@ -219,7 +201,7 @@
 //													accelerometerData.acceleration.y,
 //													accelerometerData.acceleration.z);
 					// orient accel data to current orientation
-					switch(currentOrientation) {
+					switch(self.currentOrientation) {
 						case UIInterfaceOrientationPortrait:
 							[PureData sendAccel:accelerometerData.acceleration.x
 											  y:accelerometerData.acceleration.y
@@ -274,6 +256,71 @@
 			DDLogVerbose(@"SceneManager: disabled accel");
 		}
 	}
+}
+
+// from https://developer.apple.com/library/ios/documentation/EventHandling/Conceptual/EventHandlingiPhoneOS/motion_event_basics/motion_event_basics.html
+- (void)setEnableRotation:(BOOL)enableRotation {
+	if(self.enableRotation == enableRotation) {
+		return;
+	}
+	_enableRotation = enableRotation;
+	
+	// start
+	if(enableRotation) {
+		[[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
+		[[NSNotificationCenter defaultCenter] addObserver:self
+												 selector:@selector(deviceOrientationChanged:)
+													 name:UIDeviceOrientationDidChangeNotification
+												   object:nil];
+	}
+	else { // stop
+		[[NSNotificationCenter defaultCenter] removeObserver:self];
+		[[UIDevice currentDevice] endGeneratingDeviceOrientationNotifications];
+	}
+}
+
+#pragma mark Device Events
+
+- (void)deviceOrientationChanged:(NSNotification *)notification {
+	
+	UIDeviceOrientation newOrientation = [[UIDevice currentDevice] orientation];
+	
+	int degreesZ = 0, degreesXY = 0;
+	if(newOrientation != UIDeviceOrientationFaceDown && newOrientation != UIDeviceOrientationFaceUp) {
+		degreesZ = [Util orientationInDegrees:currentDeviceOrientation] - [Util orientationInDegrees:newOrientation];
+	}
+	else {
+		degreesXY = [Util orientationInDegrees:currentDeviceOrientation] - [Util orientationInDegrees:newOrientation];
+	}
+	
+	NSString *string;
+	switch(newOrientation) {
+		case UIDeviceOrientationPortrait:
+			string = PARTY_ORIENT_PORTRAIT;
+			break;
+		case UIDeviceOrientationPortraitUpsideDown:
+			string = PARTY_ORIENT_PORTRAIT_UPSIDEDOWN;
+			break;
+		case UIDeviceOrientationLandscapeLeft:
+			string = PARTY_ORIENT_LANDSCAPE_LEFT;
+			break;
+		case UIDeviceOrientationLandscapeRight:
+			string = PARTY_ORIENT_LANDSCAPE_RIGHT;
+			break;
+		case UIDeviceOrientationFaceUp:
+			string = PARTY_ORIENT_FACE_UP;
+			break;
+		case UIDeviceOrientationFaceDown:
+			string = PARTY_ORIENT_FACE_DOWN;
+			break;
+		case UIDeviceOrientationUnknown:
+			string = @"unknown"; // should never be called
+			break;
+	}
+	
+	DDLogVerbose(@"device rotation: %@ %d %d", string, degreesZ, degreesXY);
+	[self sendRotate:string withDegreesZ:degreesZ andDegreesXY:degreesXY];
+	currentDeviceOrientation = newOrientation;
 }
 
 @end

@@ -42,7 +42,7 @@
 - (void)sendTouch:(NSString *)eventType forId:(int)id atX:(float)x andY:(float)y;
 
 // pdparty rotate event
-- (void)sendRotate:(float)degrees newOrientation:(NSString *)orientation;
+- (void)sendRotate:(NSString *)orientation withDegreesZ:(float)degreesZ andDegreesXY:(float)degreesXY;
 
 // pd key event
 - (void)sendKey:(int)key;

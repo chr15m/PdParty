@@ -30,7 +30,7 @@
 #pragma mark Conversion
 
 // convert an orientation into degrees, relative to portrait
-+ (int)orientationInDegrees:(UIInterfaceOrientation)orientation;
++ (int)orientationInDegrees:(UIDeviceOrientation)orientation;
 
 #pragma mark Logging Shortcuts
 

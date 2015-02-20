@@ -807,7 +807,13 @@ int sys_pollgui(void)
     return (sys_domicrosleep(0, 1) || sys_poll_togui());
 }
 
-
+void sys_init_fdpoll(void)
+{
+    /* create an empty FD poll list */
+    sys_fdpoll = (t_fdpoll *)t_getbytes(0);
+    sys_nfdpoll = 0;
+    inbinbuf = binbuf_new();
+}
 
 /* --------------------- starting up the GUI connection ------------- */
 
@@ -849,9 +855,7 @@ int sys_startgui(const char *libdir)
     pid_t childpid;
 #endif /* _WIN32 */
     /* create an empty FD poll list */
-    sys_fdpoll = (t_fdpoll *)t_getbytes(0);
-    sys_nfdpoll = 0;
-    inbinbuf = binbuf_new();
+    sys_init_fdpoll();
 
 #if !defined(_WIN32) && !defined(__CYGWIN__)
     signal(SIGHUP, sys_huphandler);

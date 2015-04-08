@@ -40,7 +40,7 @@
 	
 	// light status bar text on iOS 7
 	if([[[UIDevice currentDevice] systemVersion] floatValue] >= 7.0) {
-		[[UIApplication sharedApplication] setStatusBarStyle:UIStatusBarStyleLightContent];
+		[[UIApplication sharedApplication] setStatusBarStyle:UIStatusBarStyleDefault];
 	}
 	
 	// setup split view on iPad

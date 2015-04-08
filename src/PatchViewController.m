@@ -47,7 +47,7 @@
 
 	// do not extend under nav bar on iOS 7
 	if ([self respondsToSelector:@selector(edgesForExtendedLayout)]) {
-		self.edgesForExtendedLayout = UIRectEdgeNone;
+		// self.edgesForExtendedLayout = UIRectEdgeNone;
 	}
 
 	_rotation = 0;
